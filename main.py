@@ -47,14 +47,17 @@ test.head(5)
 print("The train data size before dropping Id feature is : {} ".format(train.shape))
 print("The test data size before dropping Id feature is : {} ".format(test.shape))
 
+#Save the 'Id' column
 train_ID = train['Id']
 test_ID = test['Id']
 
-train.drop("Id", axis=1, inplace=True)
-test.drop("Id", axis=1, inplace=True)
+#Now drop the  'Id' colum since it's unnecessary for  the prediction process.
+train.drop("Id", axis = 1, inplace = True)
+test.drop("Id", axis = 1, inplace = True)
 
-print('\nThe train data size after dropping Id feature is : {}')
-print('\nThe test data size after dropping Id feature is : {}')
+#check again the data size after dropping the 'Id' variable
+print("\nThe train data size after dropping Id feature is : {} ".format(train.shape)) 
+print("The test data size after dropping Id feature is : {} ".format(test.shape))
 # -
 
 # SalePrice  - 施設の売却価格（ドル）。これは予測しようとしているターゲット変数です。    
@@ -163,15 +166,19 @@ plt.show()
 # +
 # 頻度を表すグラフと正規確率プロットを描画
 # 正規確率プロットは一直線の場合正規分布
-sns.distplot(train['SalePrice'], fit=norm)
+sns.distplot(train['SalePrice'] , fit=norm);
 
+# Get the fitted parameters used by the function
 (mu, sigma) = norm.fit(train['SalePrice'])
-print('\n mu = {: .2f} and sigma = {: .2f}\n'.format(mu, sigma))
+print( '\n mu = {:.2f} and sigma = {:.2f}\n'.format(mu, sigma))
 
-plt.legend(['Normal dist. ($\mu=$ {: .2f} and $sigma=$ {: .2f})'.format(mu, sigma)], loc='best')
+#Now plot the distribution
+plt.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu, sigma)],
+            loc='best')
 plt.ylabel('Frequency')
 plt.title('SalePrice distribution')
 
+#Get also the QQ-plot
 fig = plt.figure()
 res = stats.probplot(train['SalePrice'], plot=plt)
 plt.show()
@@ -181,13 +188,16 @@ plt.show()
 # モデルは正規分布データを好むので、この変数を変換してより正規分布にする必要があります
 
 # +
-train['SalePrice'] = np.log1p(train['SalePrice'])
+train["SalePrice"] = np.log1p(train["SalePrice"])
 
-sns.distplot(train['SalePrice'], fit=norm)
+#Check the new distribution 
+sns.distplot(train['SalePrice'] , fit=norm);
 
+# Get the fitted parameters used by the function
 (mu, sigma) = norm.fit(train['SalePrice'])
-print('\n mu = {: .2f} and sigma = {: .2f}\n' .format(mu, sigma))
+print( '\n mu = {:.2f} and sigma = {:.2f}\n'.format(mu, sigma))
 
+#Now plot the distribution
 plt.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu, sigma)],
             loc='best')
 plt.ylabel('Frequency')
@@ -200,27 +210,24 @@ plt.show()
 # -
 
 ntrain = train.shape[0]
-print(ntrain)
 ntest = test.shape[0]
-print(ntest)
 y_train = train.SalePrice.values
 all_data = pd.concat((train, test)).reset_index(drop=True)
 all_data.drop(['SalePrice'], axis=1, inplace=True)
-print('all_data size is : {}' .format(all_data.shape))
+print("all_data size is : {}".format(all_data.shape))
 
 # ## 欠損値
 
-all_data_na = (all_data.isnull().sum() / len(all_data) * 100)
+all_data_na = (all_data.isnull().sum() / len(all_data)) * 100
 all_data_na = all_data_na.drop(all_data_na[all_data_na == 0].index).sort_values(ascending=False)[:30]
 missing_data = pd.DataFrame({'Missing Ratio' :all_data_na})
 missing_data.head(20)
 
-# 欠損値を可視化
 f, ax = plt.subplots(figsize=(15, 12))
 plt.xticks(rotation='90')
 sns.barplot(x=all_data_na.index, y=all_data_na)
 plt.xlabel('Features', fontsize=15)
-plt.xlabel('Percent of missing values', fontsize=15)
+plt.ylabel('Percent of missing values', fontsize=15)
 plt.title('Percent missing data by feature', fontsize=15)
 
 corrmat = train.corr()
@@ -283,20 +290,30 @@ missing_data.head()
 # +
 all_data['MSSubClass'] = all_data['MSSubClass'].apply(str)
 
+
+#Changing OverallCond into a categorical variable
 all_data['OverallCond'] = all_data['OverallCond'].astype(str)
 
 
 #Year and month sold are transformed into categorical features.
 all_data['YrSold'] = all_data['YrSold'].astype(str)
 all_data['MoSold'] = all_data['MoSold'].astype(str)
-# -
 
+# +
 from sklearn.preprocessing import LabelEncoder
 cols = ('FireplaceQu', 'BsmtQual', 'BsmtCond', 'GarageQual', 'GarageCond', 
         'ExterQual', 'ExterCond','HeatingQC', 'PoolQC', 'KitchenQual', 'BsmtFinType1', 
         'BsmtFinType2', 'Functional', 'Fence', 'BsmtExposure', 'GarageFinish', 'LandSlope',
         'LotShape', 'PavedDrive', 'Street', 'Alley', 'CentralAir', 'MSSubClass', 'OverallCond', 
         'YrSold', 'MoSold')
+# process columns, apply LabelEncoder to categorical features
+for c in cols:
+    lbl = LabelEncoder() 
+    lbl.fit(list(all_data[c].values)) 
+    all_data[c] = lbl.transform(list(all_data[c].values))
+
+# shape        
+print('Shape all_data: {}'.format(all_data.shape))
 
 # +
 for c in cols:
@@ -307,6 +324,8 @@ for c in cols:
 # shape        
 print('Shape all_data: {}'.format(all_data.shape))
 # -
+
+all_data.head()
 
 all_data['TotalSF'] = all_data['TotalBsmtSF'] + all_data['1stFlrSF'] + all_data['2ndFlrSF']
 
@@ -334,6 +353,10 @@ all_data = pd.get_dummies(all_data)
 print(all_data.shape)
 
 
+all_data.drop(all_data.columns[np.isnan(all_data).any()], axis=1)
+
+
+
 train = all_data[:ntrain]
 test = all_data[ntrain:]
 
@@ -352,15 +375,17 @@ import xgboost as xgb
 n_folds = 5
 
 def rmsle_cv(model):
-    kf = KFold(n_folds, shuffle=True, random_state=42).get_n_splits(train.values)
-    rmse= np.sqrt(-cross_val_score(model, train.values, y_train, scoring="neg_mean_squared_error", cv = kf))
-    return(rmse)
+    cv = KFold(n_splits=5, shuffle=True, random_state=42)
+    return np.sqrt(-cross_val_score(model, train, y_train, scoring="neg_mean_squared_error", cv=cv))
 
 
 # -
 
 lasso = make_pipeline(RobustScaler(), Lasso(alpha =0.0005, random_state=1))
 
+
+score = rmsle_cv(lasso)
+print("lasso score:", score.mean())
 
 ENet = make_pipeline(RobustScaler(), ElasticNet(alpha=0.0005, l1_ratio=.9, random_state=3))
 
@@ -380,8 +405,15 @@ model_xgb = xgb.XGBRegressor(colsample_bytree=0.4603, gamma=0.0468,
                              subsample=0.5213, silent=1,
                              random_state =7, nthread = -1)
 
-score = rmsle_cv(lasso)
-print("\nLasso score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+score = rmsle_cv(model_xgb)
+print("xgb score:", score.mean())
+
+score = rmsle_cv(ENet)
+print("xgb score:", score.mean())
+
+
+
+
 
 
 
